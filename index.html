@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Inventarios Pro + Perfil Completo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- SheetJS (Librería vital para Excel) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* --- ESTILOS GENERALES (MODO DARK DASHBOARD) --- */
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+        .card-dashboard { background-color: #1e293b; border: 1px solid #334155; }
+        .form-control, .form-select { background-color: #0f172a; border: 1px solid #475569; color: #fff; }
+        .form-control:focus { background-color: #1e293b; color: #fff; border-color: #3b82f6; }
+        
+        /* Botones */
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; }
+        .btn-info { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border: none; color: white; }
+        
+        /* Tabla */
+        .table-container { min-height: 400px; }
+        table { font-size: 0.75rem; white-space: nowrap; }
+        thead { position: sticky; top: 0; z-index: 10; background: #334155; }
+        
+        /* --- AJUSTE DE ENCABEZADO Y AVATAR --- */
+        .header-container {
+            /* Espacio protegido a la derecha para que el texto no toque la foto */
+            padding-right: 140px; 
+            position: relative;
+        }
+
+        .version-badge {
+            /* Separación visual hacia la izquierda */
+            margin-right: 40px; 
+            font-size: 0.9rem;
+            padding: 8px 12px;
+        }
+
+        /* Avatar Flotante SIEMPRE a la derecha */
+        .profile-container {
+            position: fixed;
+            top: 15px; 
+            right: 25px; 
+            z-index: 2000;
+        }
+        
+        .profile-trigger {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 5px double #007bff;
+            padding: 3px;
+            cursor: pointer;
+            background: white;
+            animation: heartbeat 2s infinite;
+            transition: all 0.4s ease;
+            object-fit: cover;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        .profile-trigger:hover {
+            transform: scale(1.1) rotate(-5deg);
+            border-color: #ff4757;
+            animation-play-state: paused;
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- MODAL (Estilo Completo) --- */
+        .modal-xxl { max-width: 850px; }
+        .modal-content { 
+            border-radius: 50px; 
+            border: none; 
+            overflow: visible;
+            background: #ffffff; 
+            color: #2d3436; 
+        }
+        
+        .modal-header-banner { 
+            background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%);
+            height: 180px;
+            border-radius: 50px 50px 0 0;
+            position: relative;
+        }
+
+        .modal-photo-center {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 10px solid white;
+            position: absolute;
+            left: 50%;
+            bottom: -110px;
+            transform: translateX(-50%);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+
+        .modal-body { padding: 130px 50px 60px 50px; }
+        .dev-name { font-size: 3.5rem; font-weight: 900; margin-bottom: 5px; color: #1e272e; }
+        .dev-subtitle { font-size: 1.2rem; color: #007bff; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
+        
+        .bio-box {
+            background: #f8f9fa;
+            padding: 35px;
+            border-radius: 30px;
+            font-size: 1.25rem;
+            line-height: 1.8;
+            text-align: left;
+            border-left: 8px solid #007bff;
+            color: #2d3436;
+        }
+
+        /* Redes Sociales */
+        .social-btn {
+            width: 75px;
+            height: 75px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22px;
+            margin: 15px;
+            font-size: 2.5rem;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+        }
+        .social-btn:hover { transform: translateY(-10px); filter: brightness(1.1); color: white; }
+        .bg-youtube { background: #ff0000; box-shadow: 0 10px 20px rgba(255,0,0,0.2); }
+        .bg-linkedin { background: #0077b5; box-shadow: 0 10px 20px rgba(0,119,181,0.2); }
+        .bg-github { background: #24292e; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<!-- 1. AVATAR FLOTANTE -->
+<div class="profile-container">
+    <img src="https://avatars.githubusercontent.com/u/38921558?v=4" alt="Juancito Peña" 
+         class="profile-trigger" 
+         data-bs-toggle="modal" 
+         data-bs-target="#devModal"
+         title="Conoce al desarrollador">
+</div>
+
+<!-- 2. CONTENIDO PRINCIPAL -->
+<div class="container-fluid py-4">
+    <!-- Encabezado con margen protegido para la imagen -->
+    <div class="d-flex justify-content-between align-items-center mb-4 header-container">
+        <h2 class="fw-bold text-primary m-0">📊 Sistema de Gestión de Inventarios</h2>
+        <span class="badge bg-secondary version-badge shadow">v3.2 Stable</span>
+    </div>
+
+    <div class="card card-dashboard p-4 mb-4">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label text-info">Total Transacciones</label>
+                <input type="number" id="totalRegistros" class="form-control" value="2000">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-info">Fecha Inicio</label>
+                <input type="date" id="fechaInicio" class="form-control" value="2024-01-01">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-info">Fecha Fin</label>
+                <input type="date" id="fechaFin" class="form-control" value="2024-12-31">
+            </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button class="btn btn-primary flex-grow-1" onclick="generarSimulacion()">
+                    <i class="fa-solid fa-gears"></i> Generar Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-dashboard p-3">
+        <div class="d-flex flex-wrap gap-2 justify-content-between mb-3 align-items-center">
+            <h5 class="card-title text-white mb-0">Vista Previa de Datos</h5>
+            
+            <div class="btn-group">
+                <button class="btn btn-success btn-sm" onclick="descargarPorMes('csv')">
+                    <i class="fa-solid fa-file-csv"></i> CSV Mensual
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="descargarPorMes('xlsx')">
+                    <i class="fa-solid fa-file-excel"></i> Excel Mensual
+                </button>
+                <button class="btn btn-info btn-sm" onclick="descargarPorMes('json')">
+                    <i class="fa-solid fa-file-code"></i> JSON Mensual
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive table-container">
+            <table class="table table-dark table-hover table-bordered table-sm" id="tablaResultados">
+                <thead>
+                    <tr class="text-center align-middle">
+                        <th>Fecha Entrada</th>
+                        <th>Región</th>
+                        <th>Gerente</th>
+                        <th>Encargado</th>
+                        <th>Turno</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Vencimiento</th>
+                        <th>Días Venc. (Al Entrar)</th>
+                        <th>Condición</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Stock</th>
+                        <th>Valor Stock</th>
+                        <th>Rotación</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted small" id="infoPaginacion">Mostrando 0-0 de 0</div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item"><button class="page-link bg-dark text-white border-secondary" onclick="cambiarPagina(-1)">Anterior</button></li>
+                    <li class="page-item disabled"><span class="page-link bg-secondary text-white border-secondary" id="indicadorPagina">1</span></li>
+                    <li class="page-item"><button class="page-link bg-dark text-white border-secondary" onclick="cambiarPagina(1)">Siguiente</button></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MODAL DE PRESENTACIÓN (DATOS RESTAURADOS COMPLETOS) -->
+<div class="modal fade" id="devModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xxl">
+      <div class="modal-content">
+        <div class="modal-header-banner">
+            <button type="button" class="btn-close btn-close-white p-4 position-absolute top-0 end-0" data-bs-dismiss="modal" aria-label="Close"></button>
+            <img src="https://avatars.githubusercontent.com/u/38921558?v=4" alt="Juancito Peña" class="modal-photo-center">
+        </div>
+        
+        <div class="modal-body text-center">
+            <h1 class="dev-name">Juancito Peña</h1>
+            <p class="dev-subtitle">Full Stack Developer • Data Scientist • Educator</p>
+            
+            <div class="bio-box shadow-sm mb-5">
+              <strong>🛠️ Ingeniero en Sistemas</strong> con especialidad en Desarrollo de Software.<br>
+              <strong>🎓 Postgrados:</strong> Maestría en Sistema Mención Gerencial y Maestría en Ciencia de Datos y Business Intelligence.<br>
+              <strong>🧠 IA:</strong> Prompt Engineer experto en Inteligencia Artificial.<br>
+              <strong>💻 Stack:</strong> React, .NET, C#, ASP.NET, Python, PHP, WordPress, Git.<br>
+              <strong>📊 Datos:</strong> Experto en Excel Avanzado, SQL, Power BI y Análisis con Python.<br>
+              <strong>👨‍🏫 Vocación:</strong> Docente apasionado por compartir el conocimiento técnico.
+            </div>
+
+            <div class="d-flex justify-content-center flex-wrap mt-4">
+              <a href="https://www.youtube.com/@JuancitoDevV" 
+                 target="_blank" 
+                 class="social-btn bg-youtube" 
+                 title="Visita mi canal de YouTube">
+                 <i class="fab fa-youtube"></i>
+              </a>
+
+              <a href="https://www.linkedin.com/in/juancitope%C3%B1a/" 
+                 target="_blank" 
+                 class="social-btn bg-linkedin" 
+                 title="Conéctame en LinkedIn">
+                 <i class="fab fa-linkedin-in"></i>
+              </a>
+
+              <a href="https://github.com/JUANCITOPENA" 
+                 target="_blank" 
+                 class="social-btn bg-github" 
+                 title="Mira mis proyectos en GitHub">
+                 <i class="fab fa-github"></i>
+              </a>
+            </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// --- CONFIGURACIÓN DE DATOS MAESTROS Y LÓGICA ---
+const ESTRUCTURA = {
+    "Norte": { gerente: "Carlos Martínez", encargados_data: [{n:"Luis Rivera", t:"Mañana (8h)"}, {n:"Ana Sosa", t:"Tarde (8h)"}, {n:"Jorge Cruz", t:"Noche (8h)"}] },
+    "Cibao": { gerente: "Elena Fernández", encargados_data: [{n:"Pedro Gil", t:"Mañana (8h)"}, {n:"Maria Diaz", t:"Tarde (8h)"}, {n:"Raul Ortiz", t:"Noche (8h)"}] },
+    "Sur": { gerente: "Roberto Méndez", encargados_data: [{n:"Sofia Luna", t:"Mañana (8h)"}, {n:"David Paz", t:"Tarde (8h)"}, {n:"Rosa Mota", t:"Noche (8h)"}] },
+    "Este": { gerente: "Lucía Jiménez", encargados_data: [{n:"Juan Vega", t:"Mañana (8h)"}, {n:"Carmen Ruiz", t:"Tarde (8h)"}, {n:"Leo Rico", t:"Noche (8h)"}] }
+};
+
+// "Vida útil" en días para cálculos realistas de vencimiento
+const PRODUCTOS = [
+    {c:"Alimentos", n:"Arroz Premium 10lb", costo: 250, vida: 365},
+    {c:"Alimentos", n:"Aceite Girasol 1gl", costo: 400, vida: 540},
+    {c:"Alimentos", n:"Leche Entera UHT", costo: 60, vida: 90}, 
+    {c:"Higiene", n:"Papel Higiénico 12u", costo: 180, vida: 1000},
+    {c:"Limpieza", n:"Detergente Polvo 5kg", costo: 350, vida: 730},
+    {c:"Bebidas", n:"Refresco Cola 2L", costo: 50, vida: 180}, 
+    {c:"Bebidas", n:"Agua Mineral 500ml", costo: 15, vida: 365},
+    {c:"Cuidado", n:"Shampoo Control Caspa", costo: 220, vida: 730},
+    {c:"Alimentos", n:"Harina de Trigo", costo: 45, vida: 240}, 
+    {c:"Limpieza", n:"Cloro Concentrado", costo: 85, vida: 365},
+    {c:"Cuidado", n:"Pasta Dental", costo: 110, vida: 540},
+    {c:"Bebidas", n:"Cerveza Importada", costo: 150, vida: 270},
+
+    {c:"Alimentos", n:"Azúcar Refinada 5lb", costo: 160, vida: 720},
+    {c:"Alimentos", n:"Sal Yodada 1kg", costo: 40, vida: 1500},
+    {c:"Alimentos", n:"Café Molido 1lb", costo: 280, vida: 365},
+    {c:"Higiene", n:"Jabón de Tocador 3u", costo: 95, vida: 730},
+    {c:"Limpieza", n:"Suavizante de Ropa 1gl", costo: 300, vida: 540},
+    {c:"Bebidas", n:"Jugo Natural 1L", costo: 120, vida: 30},
+    {c:"Cuidado", n:"Crema Corporal Hidratante", costo: 350, vida: 540},
+    {c:"Alimentos", n:"Salsa de Tomate 16oz", costo: 90, vida: 365},
+
+    // 10 nuevos productos
+    {c:"Alimentos", n:"Mantequilla 1lb", costo: 220, vida: 60},
+    {c:"Alimentos", n:"Queso Cheddar 2lb", costo: 480, vida: 90},
+    {c:"Alimentos", n:"Pollo Entero Congelado", costo: 350, vida: 180},
+    {c:"Alimentos", n:"Galletas Dulces 12u", costo: 95, vida: 240},
+    {c:"Higiene", n:"Desodorante Roll-On", costo: 150, vida: 540},
+    {c:"Limpieza", n:"Limpiador Multiusos 1L", costo: 120, vida: 365},
+    {c:"Bebidas", n:"Vino Tinto Reserva 750ml", costo: 950, vida: 720},
+    {c:"Cuidado", n:"Protector Solar SPF50", costo: 600, vida: 365},
+    {c:"Alimentos", n:"Miel Pura 500g", costo: 280, vida: 1095},
+    {c:"Alimentos", n:"Avena Integral 1kg", costo: 150, vida: 540}
+];
+
+let baseDatosGlobal = [];
+let paginaActual = 1;
+const registrosPorPagina = 30;
+
+function generarSimulacion() {
+    baseDatosGlobal = [];
+    
+    const total = parseInt(document.getElementById('totalRegistros').value);
+    const fInicio = new Date(document.getElementById('fechaInicio').value);
+    const fFin = new Date(document.getElementById('fechaFin').value);
+    const regionesKeys = Object.keys(ESTRUCTURA);
+
+    for (let i = 0; i < total; i++) {
+        // Datos Básicos
+        const fechaEntrada = new Date(fInicio.getTime() + Math.random() * (fFin.getTime() - fInicio.getTime()));
+        const regionNombre = regionesKeys[Math.floor(Math.random() * regionesKeys.length)];
+        const regionData = ESTRUCTURA[regionNombre];
+        const encargadoObj = regionData.encargados_data[Math.floor(Math.random() * 3)];
+        const prod = PRODUCTOS[Math.floor(Math.random() * PRODUCTOS.length)];
+        
+        // Lógica KPI Inventario (73-15-10-2)
+        const rndInv = Math.random();
+        let estatusInv, stockTarget;
+        if (rndInv < 0.73) { estatusInv = "Excelente"; stockTarget = Math.floor(Math.random() * 300) + 100; }
+        else if (rndInv < 0.88) { estatusInv = "Óptimo"; stockTarget = Math.floor(Math.random() * 60) + 40; }
+        else if (rndInv < 0.98) { estatusInv = "Alerta/Poco"; stockTarget = Math.floor(Math.random() * 38) + 1; }
+        else { estatusInv = "Negativo"; stockTarget = Math.floor(Math.random() * -10); }
+
+        let entrada = Math.floor(Math.random() * 100) + 20; 
+        let salida = entrada - stockTarget;
+        if (salida < 0 && estatusInv !== "Negativo") { entrada = stockTarget + Math.floor(Math.random() * 20); salida = entrada - stockTarget; }
+        const stockActual = entrada - salida;
+
+        // Lógica de Vencimiento REALISTA (Vida Útil)
+        const rndVenc = Math.random();
+        let diasParaVencer, condicionProducto, fechaVencimiento;
+        fechaVencimiento = new Date(fechaEntrada);
+
+        if (rndVenc < 0.80) { 
+            // 80% BUEN ESTADO (Entre 40% y 100% de su vida útil restante)
+            condicionProducto = "Buen Estado";
+            const diasVidaRestante = Math.floor(prod.vida * (0.4 + Math.random() * 0.6));
+            diasParaVencer = diasVidaRestante;
+        } else if (rndVenc < 0.90) { 
+            // 10% CERCANO A VENCER (1 a 10% de vida útil restante)
+            condicionProducto = "Cercano a Vencer";
+            const diasVidaRestante = Math.floor(prod.vida * 0.1 * Math.random()) + 1; 
+            diasParaVencer = diasVidaRestante;
+        } else if (rndVenc < 0.95) { 
+            // 5% VENCIDO (Ya pasó la fecha)
+            condicionProducto = "Vencido";
+            diasParaVencer = -Math.floor(Math.random() * 15) - 1; 
+        } else { 
+            // 5% DEFECTUOSO (Fecha bien, producto mal)
+            condicionProducto = "Defectuoso/Devuelto";
+            diasParaVencer = Math.floor(prod.vida * 0.5); 
+        }
+        
+        fechaVencimiento.setDate(fechaVencimiento.getDate() + diasParaVencer);
+
+        // Financieros
+        const valorStock = parseFloat((stockActual * prod.costo).toFixed(2));
+        let rotacion = (stockActual + salida) > 0 ? ((salida / (stockActual + salida)) * 100).toFixed(2) + "%" : "0%";
+
+        baseDatosGlobal.push({
+            fecha_entrada: fechaEntrada.toISOString().split('T')[0],
+            region: regionNombre,
+            gerente: regionData.gerente,
+            encargado: encargadoObj.n,
+            turno: encargadoObj.t,
+            producto: prod.n,
+            categoria: prod.c,
+            fecha_vencimiento: fechaVencimiento.toISOString().split('T')[0],
+            dias_vencimiento: diasParaVencer,
+            condicion: condicionProducto,
+            cantidad_entrada: entrada,
+            cantidad_salida: salida,
+            stock_actual: stockActual,
+            valor_stock_actual: valorStock,
+            rotacion_porcentaje: rotacion,
+            estatus_inventario: estatusInv
+        });
+    }
+    
+    paginaActual = 1;
+    renderTabla();
+}
+
+function renderTabla() {
+    const tbody = document.querySelector('#tablaResultados tbody');
+    tbody.innerHTML = '';
+    if (baseDatosGlobal.length === 0) return;
+
+    const inicio = (paginaActual - 1) * registrosPorPagina;
+    const fin = Math.min(inicio + registrosPorPagina, baseDatosGlobal.length);
+    
+    baseDatosGlobal.slice(inicio, fin).forEach(row => {
+        let colorClass = "";
+        if (row.estatus_inventario === "Negativo") colorClass = "text-danger fw-bold";
+        else if (row.estatus_inventario === "Alerta/Poco") colorClass = "text-warning";
+        else if (row.estatus_inventario === "Excelente") colorClass = "text-success";
+
+        let condClass = "";
+        if(row.condicion === "Vencido") condClass = "text-danger fw-bold";
+        if(row.condicion === "Cercano a Vencer") condClass = "text-warning";
+
+        const tr = `<tr>
+            <td>${row.fecha_entrada}</td>
+            <td>${row.region}</td>
+            <td>${row.gerente}</td>
+            <td>${row.encargado}</td>
+            <td>${row.turno}</td>
+            <td>${row.producto}</td>
+            <td>${row.categoria}</td>
+            <td class="${condClass}">${row.fecha_vencimiento}</td>
+            <td class="text-center">${row.dias_vencimiento}</td>
+            <td>${row.condicion}</td>
+            <td>${row.cantidad_entrada}</td>
+            <td>${row.cantidad_salida}</td>
+            <td class="${colorClass}">${row.stock_actual}</td>
+            <td>${row.valor_stock_actual}</td>
+            <td>${row.rotacion_porcentaje}</td>
+            <td><span class="badge ${row.estatus_inventario === 'Excelente' ? 'bg-success' : row.estatus_inventario === 'Negativo' ? 'bg-danger' : row.estatus_inventario === 'Óptimo' ? 'bg-primary' : 'bg-warning text-dark'}">${row.estatus_inventario}</span></td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', tr);
+    });
+
+    document.getElementById('indicadorPagina').textContent = paginaActual;
+    document.getElementById('infoPaginacion').textContent = `Mostrando ${inicio + 1}-${fin} de ${baseDatosGlobal.length}`;
+}
+
+function cambiarPagina(delta) {
+    const total = Math.ceil(baseDatosGlobal.length / registrosPorPagina);
+    if (paginaActual + delta >= 1 && paginaActual + delta <= total) {
+        paginaActual += delta;
+        renderTabla();
+    }
+}
+
+function descargarPorMes(tipo) {
+    if (baseDatosGlobal.length === 0) { alert("Genera data primero"); return; }
+    const datosPorMes = {};
+    baseDatosGlobal.forEach(row => {
+        const key = row.fecha_entrada.substring(0, 7);
+        if (!datosPorMes[key]) datosPorMes[key] = [];
+        datosPorMes[key].push(row);
+    });
+
+    const meses = Object.keys(datosPorMes).sort();
+    let delay = 0;
+    meses.forEach(mes => {
+        setTimeout(() => {
+            const data = datosPorMes[mes];
+            const name = `Inventario_${mes}`;
+            if (tipo === 'xlsx') {
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Data");
+                XLSX.writeFile(wb, `${name}.xlsx`);
+            } else if (tipo === 'csv') {
+                const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(data));
+                downloadFile(csv, `${name}.csv`, 'text/csv');
+            } else {
+                downloadFile(JSON.stringify(data, null, 2), `${name}.json`, 'application/json');
+            }
+        }, delay);
+        delay += 500;
+    });
+}
+
+function downloadFile(content, fileName, mimeType) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], {type: mimeType}));
+    a.download = fileName;
+    a.click();
+}
+
+window.onload = generarSimulacion;
+</script>
+</body>
+</html>
